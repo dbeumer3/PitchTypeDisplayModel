@@ -1,0 +1,234 @@
+```{r}
+pitchTypeDisplayFunction <- function(df1){
+  bigDF <- NA
+  
+  for(m in unique(df1$Pitcher)){
+    weirdPitcher <- 0
+    
+    # Filter for each pitcher
+    pitcherDataRaw <- df1[df1$Pitcher == m,]
+    
+    # Filter out pitches that aren't tagged
+    pitcherData <- pitcherDataRaw[pitcherDataRaw$TaggedPitchType != "Undefined",]
+    
+    # Cover cases where we don't need to or can't run the rest of the code
+    if(is.na(pitcherData$PitcherTeam[1])){
+      pitcherData <- pitcherDataRaw
+      pitcherData$PitchTypeDisplay <- pitcherData$WF.PitchType
+      pitcherDisplay <- select(pitcherData, PitchUID, PitchTypeDisplay)
+    } else if (nrow(pitcherData) < (0.1 * nrow(pitcherDataRaw))) {
+      pitcherData <- pitcherDataRaw
+      pitcherData$PitchTypeDisplay <- pitcherData$WF.PitchType
+      pitcherDisplay <- select(pitcherData, PitchUID, PitchTypeDisplay)
+    } else if(pitcherData$PitcherTeam[1] == "WAK_DEA"){
+      pitcherData <- pitcherDataRaw
+      pitcherData$PitchTypeDisplay <- pitcherData$TaggedPitchType
+      pitcherDisplay <- select(pitcherData, PitchUID, PitchTypeDisplay)
+    } else {
+      # Create pitch type vector to only contain pitches that are tagged for this pitcher
+      pitchTypes <- na.omit(unique(pitcherData$WF.PitchType))
+      
+      # This will help for determining pitch type percentages
+      pitchTypePct <- data.frame(matrix(nrow = 1, ncol = length(pitchTypes)))
+      colnames(pitchTypePct) <- pitchTypes
+      
+      # Find pitch tag percentages to rule out rarely-tagged pitches
+      j = 1
+      for(i in pitchTypes){
+        pitchTypePct[j] <- nrow(pitcherData[pitcherData$TaggedPitchType == i,]) / nrow(pitcherData)
+        j = j + 1
+      }
+      
+      # Filter out pitches that don't have breaks
+      pitcherData <- pitcherData[!is.na(pitcherData$HorzBreak),]
+      
+      # Create data frame that stores data sets for each pitch type
+      pitchTypeData <- list()
+      
+      # Find median breaks for each pitch type and separate them into their own data sets
+      medianBreaks <- NA
+      
+      if("FF" %in% pitchTypes){
+        pitcherFF <- pitcherData[pitcherData$WF.PitchType == "FF",]
+        pitcherFF <- pitcherFF[!is.na(pitcherFF$HorzBreak),]
+        medianPitcherFF <- data.frame("HorzBreak" = median(pitcherFF$HorzBreak),"InducedVertBreak" = median(pitcherFF$InducedVertBreak))
+        pitchTypeData <- append(pitchTypeData, list(pitcherFF))
+        if(is.na(medianBreaks[1])){
+          medianBreaks <- t(medianPitcherFF)
+          colnames(medianBreaks) <- "FF"
+        } else {
+          medianBreaks <- cbind(medianBreaks, t(medianPitcherFF))
+          colnames(medianBreaks)[ncol(medianBreaks)] <- "FF"
+        }
+      }
+      if("FT" %in% pitchTypes){
+        pitcherFT <- pitcherData[pitcherData$WF.PitchType == "FT",]
+        pitcherFT <- pitcherFT[!is.na(pitcherFT$HorzBreak),]
+        medianPitcherFT <- data.frame("HorzBreak" = median(pitcherFT$HorzBreak),"InducedVertBreak" = median(pitcherFT$InducedVertBreak))
+        pitchTypeData <- append(pitchTypeData, list(pitcherFT))
+        if(is.na(medianBreaks[1])){
+          medianBreaks <- t(medianPitcherFT)
+          colnames(medianBreaks) <- "FT"
+        } else {
+          medianBreaks <- cbind(medianBreaks, t(medianPitcherFT))
+          colnames(medianBreaks)[ncol(medianBreaks)] <- "FT"
+        }
+      }
+      if("CT" %in% pitchTypes){
+        pitcherCT <- pitcherData[pitcherData$WF.PitchType == "CT",]
+        pitcherCT <- pitcherCT[!is.na(pitcherCT$HorzBreak),]
+        medianPitcherCT <- data.frame("HorzBreak" = median(pitcherCT$HorzBreak),"InducedVertBreak" = median(pitcherCT$InducedVertBreak))
+        pitchTypeData <- append(pitchTypeData, list(pitcherCT))
+        if(is.na(medianBreaks[1])){
+          medianBreaks <- t(medianPitcherCT)
+          colnames(medianBreaks) <- "CT"
+        } else {
+          medianBreaks <- cbind(medianBreaks, t(medianPitcherCT))
+          colnames(medianBreaks)[ncol(medianBreaks)] <- "CT"
+        }
+      }
+      if("CH" %in% pitchTypes){
+        pitcherCH <- pitcherData[pitcherData$WF.PitchType == "CH",]
+        pitcherCH <- pitcherCH[!is.na(pitcherCH$HorzBreak),]
+        medianPitcherCH <- data.frame("HorzBreak" = median(pitcherCH$HorzBreak),"InducedVertBreak" = median(pitcherCH$InducedVertBreak))
+        pitchTypeData <- append(pitchTypeData, list(pitcherCH))
+        if(is.na(medianBreaks[1])){
+          medianBreaks <- t(medianPitcherCH)
+          colnames(medianBreaks) <- "CH"
+        } else {
+          medianBreaks <- cbind(medianBreaks, t(medianPitcherCH))
+          colnames(medianBreaks)[ncol(medianBreaks)] <- "CH"
+        }
+      }
+      if("SL" %in% pitchTypes){
+        pitcherSL <- pitcherData[pitcherData$WF.PitchType == "SL",]
+        pitcherSL <- pitcherSL[!is.na(pitcherSL$HorzBreak),]
+        medianPitcherSL <- data.frame("HorzBreak" = median(pitcherSL$HorzBreak),"InducedVertBreak" = median(pitcherSL$InducedVertBreak))
+        pitchTypeData <- append(pitchTypeData, list(pitcherSL))
+        if(is.na(medianBreaks[1])){
+          medianBreaks <- t(medianPitcherSL)
+          colnames(medianBreaks) <- "SL"
+        } else {
+          medianBreaks <- cbind(medianBreaks, t(medianPitcherSL))
+          colnames(medianBreaks)[ncol(medianBreaks)] <- "SL"
+        }
+      }
+      if("CB" %in% pitchTypes){
+        pitcherCB <- pitcherData[pitcherData$WF.PitchType == "CB",]
+        pitcherCB <- pitcherCB[!is.na(pitcherCB$HorzBreak),]
+        medianPitcherCB <- data.frame("HorzBreak" = median(pitcherCB$HorzBreak),"InducedVertBreak" = median(pitcherCB$InducedVertBreak))
+        pitchTypeData <- append(pitchTypeData, list(pitcherCB))
+        if(is.na(medianBreaks[1])){
+          medianBreaks <- t(medianPitcherCB)
+          colnames(medianBreaks) <- "CB"
+        } else {
+          medianBreaks <- cbind(medianBreaks, t(medianPitcherCB))
+          colnames(medianBreaks)[ncol(medianBreaks)] <- "CB"
+        }
+      }
+      
+      # Create breaks data frame
+      #medianBreaks <- cbind(t(medianPitcherFF), t(medianPitcherSL), t(medianPitcherCB), t(medianPitcherFT), t(medianPitcherCT), t(medianPitcherCH))
+      #colnames(medianBreaks) <- c("FF","SL","CB","FT","CT","CH")
+      adjMedianBreaks <- medianBreaks
+      
+      # Create std dev distance df
+      std <- rep(NA, length(pitchTypes))
+      a <- 1
+      
+      # Create pitch type ready-to-bind list
+      pitchTypeBind <- vector(mode = "list", length = 6)
+      
+      for(i in pitchTypes){
+        if(pitchTypePct[,i] > 0){
+          df <- pitcherData[pitcherData$WF.PitchType == i,]
+          df <- df[!is.na(df$HorzBreak),]
+          distDF <- rep(NA, nrow(df))
+          for(l in 1:nrow(df)){
+            distDF[l] <- crossdist(df$HorzBreak[l], df$InducedVertBreak[l], 
+                      medianBreaks[,i][1], medianBreaks[,i][2])
+          }
+          
+          std[a] <- (sqrt(mean((distDF - mean(distDF))^2)))
+        } else {
+          std[a] <- 10
+        }
+      
+        
+        # If < 5% of tagged pitches are this pitch OR it's std dev distance is large
+        if(pitchTypePct[,i] < 0.05 | std[a] > 3){
+          # Remove the pitch type from breaks chart for this pitcher
+          if(length(adjMedianBreaks) == 2) {
+            weirdPitcher <- 1
+          } else {
+            adjMedianBreaks <- adjMedianBreaks[,!(colnames(adjMedianBreaks) == i)]
+            if(length(adjMedianBreaks) == 2) {
+              pitcherData <- pitcherDataRaw
+              pitcherData$PitchTypeDisplay <- i
+              pitcherDisplay <- select(pitcherData, PitchUID, PitchTypeDisplay)
+            }
+          }
+        }
+        
+        a <- a+1
+      }
+      
+      if(weirdPitcher == 1) {
+        pitcherData$PitchTypeDisplay <- pitcherData$TaggedPitchType
+        pitcherDisplay <- select(pitcherData, PitchUID, PitchTypeDisplay)
+      }
+      
+      if(length(adjMedianBreaks) > 2) {
+        a <- 1
+        
+        for(i in pitchTypes){
+          #df <- pitcherData[pitcherData$WF.PitchType == i,]
+          df <- pitcherDataRaw
+          df <- df[df$WF.PitchType == i,]
+          df <- df[!is.na(df$HorzBreak),]
+          df$PitchTypeDisplay <- NA
+          
+          if(pitchTypePct[,i] < 0.05 | std[a] > 3){
+            # Remove the pitch type from breaks chart for this pitcher
+            #adjMedianBreaks <- adjMedianBreaks[,!(colnames(adjMedianBreaks) == i)]
+            
+            # Compare each pitch in this data set to the median break and assign new pitch type
+            for(l in 1:nrow(df)){
+              threshold <- 100000
+              for(n in 1:ncol(adjMedianBreaks)){
+                comp <- crossdist(df$HorzBreak[l], df$InducedVertBreak[l], 
+                      adjMedianBreaks[,n][1], adjMedianBreaks[,n][2])
+                if(comp < threshold) {
+                  df$PitchTypeDisplay[l] <- colnames(adjMedianBreaks)[n]
+                  threshold <- comp
+                }
+              }
+            }
+          } else {
+            df$PitchTypeDisplay <- df$WF.PitchType
+          }
+          
+          pitchTypeBind[[a]] <- select(df, PitchUID, PitchTypeDisplay)
+          a <- ifelse(pitchTypePct[,i] > 0, a+1, a)
+        }
+        
+        # bind pitcher data with tm2024/df
+        pitcherDisplay <- rbind(pitchTypeBind[[1]],pitchTypeBind[[2]],pitchTypeBind[[3]],
+                           pitchTypeBind[[4]],pitchTypeBind[[5]],pitchTypeBind[[6]])
+      }
+    } 
+      # Store this pitcher's display data in DF to be binded
+      if (!is.null(bigDF) && is.data.frame(bigDF) && nrow(bigDF) > 0) {
+        bigDF <- rbind(bigDF,pitcherDisplay)
+      } else {
+        bigDF <- pitcherDisplay
+      }
+  }
+  
+  # return pitcher's final data
+  finalBind <- left_join(df1, bigDF, by = "PitchUID")
+  finalBind <- finalBind %>% distinct(PitchUID, .keep_all = TRUE)
+  return(finalBind)
+}
+```
+
